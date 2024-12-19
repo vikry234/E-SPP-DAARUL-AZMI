@@ -37,10 +37,10 @@ class ProfileController extends Controller
 				]);
 
 				return redirect()->route('home.index')->with('success', 'Password anda berhasil diubah!');
-			}else{
+			} else {
 				return back()->with('error', 'Password sekarang salah!');
 			}
-		}else{
+		} else {
 			return back()->with('error', 'Password baru tidak boleh sama dengan password sekarang');
 		}
 	}

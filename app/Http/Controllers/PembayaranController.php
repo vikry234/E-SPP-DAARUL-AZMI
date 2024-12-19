@@ -26,8 +26,8 @@ class PembayaranController extends Controller
             $data = Siswa::with(['kelas'])->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('action', function($row) {
-                    $btn = '<div class="row"><a href="'.route('pembayaran.bayar', $row->nisn).'"class="btn btn-primary btn-sm ml-2">
+                ->addColumn('action', function ($row) {
+                    $btn = '<div class="row"><a href="' . route('pembayaran.bayar', $row->nisn) . '"class="btn btn-primary btn-sm ml-2">
                     <i class="fas fa-money-check"></i> BAYAR
                     </a>';
                     return $btn;
@@ -36,73 +36,81 @@ class PembayaranController extends Controller
                 ->make(true);
         }
 
-    	return view('pembayaran.index');
+        return view('pembayaran.index');
     }
 
     public function bayar($nisn)
-    {	
-    	$siswa = Siswa::with(['kelas'])
+    {
+        $siswa = Siswa::with(['kelas'])
             ->where('nisn', $nisn)
             ->first();
 
         $spp = Spp::all();
 
-    	return view('pembayaran.bayar', compact('siswa', 'spp'));
+        return view('pembayaran.bayar', compact('siswa', 'spp'));
     }
 
     public function spp($tahun)
     {
         $spp = Spp::where('tahun', $tahun)
             ->first();
-        
+
         return response()->json([
             'data' => $spp,
-            'nominal_rupiah' => 'Rp '.number_format($spp->nominal, 0, 2, '.'),
+            'nominal_rupiah' => 'Rp ' . number_format($spp->nominal, 0, 2, '.'),
         ]);
     }
 
     public function prosesBayar(Request $request, $nisn)
     {
         $request->validate([
-            'jumlah_bayar' => 'required',
-        ],[
-            'jumlah_bayar.required' => 'Jumlah bayar tidak boleh kosong!'
+            'jumlah_bayar' => 'required|numeric',
+        ], [
+            'jumlah_bayar.required' => 'Jumlah bayar tidak boleh kosong!',
+            'jumlah_bayar.numeric' => 'Jumlah bayar harus berupa angka!',
         ]);
 
-		$petugas = Petugas::where('user_id', Auth::user()->id)
-            ->first();
-        
-        $pembayaran = Pembayaran::whereIn('bulan_bayar', $request->bulan_bayar)
-            ->where('tahun_bayar', $request->tahun_bayar)
-            ->where('siswa_id', $request->siswa_id)
-            ->pluck('bulan_bayar')
-            ->toArray();
+        $petugas = Petugas::where('user_id', Auth::user()->id)->first();
+        $siswa = Siswa::where('nisn', $nisn)->first();
+        $spp = Spp::where('tahun', $request->tahun_bayar)->first();
 
-        if (!$pembayaran) {
-            DB::transaction(function() use($request, $petugas) {
-                foreach ($request->bulan_bayar as $bulan) {   
-                    Pembayaran::create([
-                        'kode_pembayaran' => 'SPPR'.Str::upper(Str::random(5)),
-                        'petugas_id' => $petugas->id,
-                        'siswa_id' => $request->siswa_id,
-                        'nisn' => $request->nisn,
-                        'tanggal_bayar' => Carbon::now('Asia/Jakarta'),
-                        'tahun_bayar' => $request->tahun_bayar,
-                        'bulan_bayar' => $bulan,
-                        'jumlah_bayar' => $request->jumlah_bayar,
-                    ]);
-                }
-            });
-            
-            return redirect()->route('pembayaran.history-pembayaran')
-                ->with('success', 'Pembayaran berhasil disimpan!');
-        }else{
-            return back()
-                ->with('error', 'Siswa Dengan Nama : '.$request->nama_siswa.' , NISN : '.
-                $request->nisn.' Sudah Membayar Spp di bulan yang diinput ('.
-                implode($pembayaran,',').")".' , di Tahun : '.$request->tahun_bayar.' , Pembayaran Dibatalkan');
+        // Cek apakah siswa sudah membayar untuk bulan dan tahun tersebut
+        $pembayaran = Pembayaran::where('siswa_id', $siswa->id)
+            ->where('tahun_bayar', $request->tahun_bayar)
+            ->whereIn('bulan_bayar', $request->bulan_bayar)
+            ->get();
+
+        if ($pembayaran->count() > 0) {
+            return back()->with('error', 'Pembayaran sudah dilakukan untuk bulan dan tahun tersebut.');
         }
+
+        DB::transaction(function () use ($request, $petugas, $siswa, $spp) {
+            // Hapus format mata uang dan konversi menjadi angka
+            $jumlahBayar = str_replace(['Rp', '.', ','], '', $request->jumlah_bayar);  // Menghapus simbol dan format mata uang
+            $jumlahBayar = floatval($jumlahBayar);  // Ubah menjadi float
+
+            // Cek jika jumlah bayar kurang dari nominal SPP
+            $statusPembayaran = $jumlahBayar >= $spp->nominal ? 'Lunas' : 'Belum Lunas';
+
+            foreach ($request->bulan_bayar as $bulan) {
+                Pembayaran::create([
+                    'kode_pembayaran' => 'SPPR' . Str::upper(Str::random(5)),
+                    'petugas_id' => $petugas->id,
+                    'siswa_id' => $siswa->id,
+                    'nisn' => $siswa->nisn,
+                    'tanggal_bayar' => Carbon::now('Asia/Jakarta'),
+                    'tahun_bayar' => $request->tahun_bayar,
+                    'bulan_bayar' => $bulan,
+                    'jumlah_bayar' => $jumlahBayar,
+                    'status' => $statusPembayaran,  // Menyimpan status lunas atau belum lunas
+                ]);
+            }
+        });
+
+        return redirect()->route('pembayaran.status-pembayaran')
+            ->with('success', 'Pembayaran berhasil disimpan!');
     }
+
 
     public function statusPembayaran(Request $request)
     {
@@ -110,12 +118,12 @@ class PembayaranController extends Controller
             $data = Siswa::with(['kelas'])
                 ->latest()
                 ->get();
-                
+
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('action', function($row) {
-                    $btn = '<div class="row"><a href="'.route('pembayaran.status-pembayaran.show',$row->nisn).
-                    '"class="btn btn-primary btn-sm">DETAIL</a>';
+                ->addColumn('action', function ($row) {
+                    $btn = '<div class="row"><a href="' . route('pembayaran.status-pembayaran.show', $row->nisn) .
+                        '"class="btn btn-primary btn-sm">DETAIL</a>';
                     return $btn;
                 })
                 ->rawColumns(['action'])
@@ -133,32 +141,46 @@ class PembayaranController extends Controller
 
     public function statusPembayaranShowStatus($nisn, $tahun)
     {
-        $siswa = Siswa::where('nisn', $nisn)
-            ->first();
-        
-        $spp = Spp::where('tahun', $tahun)
-            ->first();
+        $siswa = Siswa::where('nisn', $nisn)->first();
+        $spp = Spp::where('tahun', $tahun)->first();
 
         $pembayaran = Pembayaran::with(['siswa'])
             ->where('siswa_id', $siswa->id)
             ->where('tahun_bayar', $spp->tahun)
             ->get();
 
+        foreach ($pembayaran as $row) {
+            $jumlahBayar = floatval(str_replace(['Rp', '.', ','], '', $row->jumlah_bayar));
+            $nominalSpp = floatval(str_replace(['Rp', '.', ','], '', $spp->nominal));
+
+            // Debugging output untuk memastikan nilai sudah benar
+            \Log::info('Jumlah Bayar: ' . $jumlahBayar);
+            \Log::info('Nominal SPP: ' . $nominalSpp);
+
+            if ($jumlahBayar < $nominalSpp) {
+                $row->status = 'Belum Lunas';
+            } else {
+                $row->status = 'Lunas';
+            }
+        }
+
+
         return view('pembayaran.status-pembayaran-show', compact('siswa', 'spp', 'pembayaran'));
     }
+
 
     public function historyPembayaran(Request $request)
     {
         if ($request->ajax()) {
-            $data = Pembayaran::with(['petugas', 'siswa' => function($query){
+            $data = Pembayaran::with(['petugas', 'siswa' => function ($query) {
                 $query->with('kelas');
             }])
                 ->latest()->get();
 
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('action', function($row) {
-                    $btn = '<div class="row"><a href="'.route('pembayaran.history-pembayaran.print',$row->id).'"class="btn btn-danger btn-sm ml-2" target="_blank">
+                ->addColumn('action', function ($row) {
+                    $btn = '<div class="row"><a href="' . route('pembayaran.history-pembayaran.print', $row->id) . '"class="btn btn-danger btn-sm ml-2" target="_blank">
                     <i class="fas fa-print fa-fw"></i></a>';
                     return $btn;
                 })
@@ -166,7 +188,7 @@ class PembayaranController extends Controller
                 ->make(true);
         }
 
-    	return view('pembayaran.history-pembayaran');
+        return view('pembayaran.history-pembayaran');
     }
 
     public function printHistoryPembayaran($id)
@@ -175,7 +197,7 @@ class PembayaranController extends Controller
             ->where('id', $id)
             ->first();
 
-        $pdf = PDF::loadView('pembayaran.history-pembayaran-preview',$data);
+        $pdf = PDF::loadView('pembayaran.history-pembayaran-preview', $data);
         return $pdf->stream();
     }
 
@@ -196,14 +218,14 @@ class PembayaranController extends Controller
 
         if ($data['pembayaran']->count() > 0) {
             $pdf = PDF::loadView('pembayaran.laporan-preview', $data);
-            return $pdf->download('pembayaran-spp-'.
-            Carbon::parse($request->tanggal_mulai)->format('d-m-Y').'-'.
-            Carbon::parse($request->tanggal_selesai)->format('d-m-Y').
-            Str::random(9).'.pdf');   
-        }else{
-            return back()->with('error', 'Data pembayaran spp tanggal '.
-                Carbon::parse($request->tanggal_mulai)->format('d-m-Y').' sampai dengan '.
-                Carbon::parse($request->tanggal_selesai)->format('d-m-Y').' Tidak Tersedia');
+            return $pdf->download('pembayaran-spp-' .
+                Carbon::parse($request->tanggal_mulai)->format('d-m-Y') . '-' .
+                Carbon::parse($request->tanggal_selesai)->format('d-m-Y') .
+                Str::random(9) . '.pdf');
+        } else {
+            return back()->with('error', 'Data pembayaran spp tanggal ' .
+                Carbon::parse($request->tanggal_mulai)->format('d-m-Y') . ' sampai dengan ' .
+                Carbon::parse($request->tanggal_selesai)->format('d-m-Y') . ' Tidak Tersedia');
         }
     }
 }

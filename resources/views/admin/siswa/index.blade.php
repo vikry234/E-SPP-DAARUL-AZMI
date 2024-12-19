@@ -17,37 +17,37 @@
   <div class="col-12">
     <div class="card">
       <div class="card-header">
-      @can('create-siswa')
-      	<a href="javascript:void(0)" class="btn btn-primary btn-sm" 
-        data-toggle="modal" data-target="#createModal">
+        @can('create-siswa')
+        <a href="javascript:void(0)" class="btn btn-primary btn-sm"
+          data-toggle="modal" data-target="#createModal">
           <i class="fas fa-plus fa-fw"></i> Tambah Data
         </a>
-      @endcan
+        @endcan
       </div>
       <!-- /.card-header -->
       <div class="card-body">
         <table id="dataTable2" class="table table-bordered table-striped">
           <thead>
-          <tr>
-            <th>No</th>
-            <th>Nama Siswa</th>
-            <th>Nisn</th>
-            <th>Kelas</th>
-            <th>Jenis Kelamin</th>
-            <th>No Telepon</th>
-            <th>Aksi</th>
-          </tr>
+            <tr>
+              <th>No</th>
+              <th>Nama Siswa</th>
+              <th>Nisn</th>
+              <th>Kelas</th>
+              <th>Jenis Kelamin</th>
+              <th>No Telepon</th>
+              <th>Aksi</th>
+            </tr>
           </thead>
           <tbody>
-          <tr>
-          	<td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -70,7 +70,7 @@
         </button>
       </div>
       <form id="store">
-      <div class="modal-body">
+        <div class="modal-body">
           <div class="alert alert-danger print-error-msg" style="display: none;">
             <ul></ul>
           </div>
@@ -81,33 +81,33 @@
                 <input required="" type="text" name="nama_siswa" id="nama_siswa" class="form-control">
               </div>
             </div>
-            <div class="col-lg-3">
+            <!-- <div class="col-lg-3">
               <div class="form-group">
                 <label for="username">Username:</label>
                 <input required="" type="text" name="username" id="username" class="form-control">  
               </div>
-            </div>
+            </div> -->
             <div class="col-lg-3">
               <div class="form-group">
                 <label for="nisn">Nisn</label>
-                <input required="" type="text" name="nisn" id="nisn" class="form-control">  
+                <input required="" type="text" name="nisn" id="nisn" class="form-control">
               </div>
             </div>
             <div class="col-lg-3">
               <div class="form-group">
                 <label for="nis">Nis:</label>
-                <input required="" type="text" name="nis" id="nis" class="form-control">  
+                <input required="" type="text" name="nis" id="nis" class="form-control">
               </div>
-            </div>  
+            </div>
           </div>
           <div class="row">
             <div class="col-lg-3">
               <div class="form-group">
                 <label for="jenis_kelamin">Jenis Kelamin:</label>
                 <select required="" name="jenis_kelamin" id="jenis_kelamin" class="form-control select2bs4">
-                    <option disabled="" selected="">- PILIH JENIS KELAMIN -</option>
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
+                  <option disabled="" selected="">- PILIH JENIS KELAMIN -</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
                 </select>
               </div>
             </div>
@@ -129,19 +129,19 @@
                 <select required="" name="kelas_id" id="kelas_id" class="form-control select2bs4">
                   <option disabled="" selected="">- PILIH KELAS -</option>
                   @foreach($kelas as $row)
-                    <option value="{{ $row->id }}">{{ $row->nama_kelas }}</option>
+                  <option value="{{ $row->id }}">{{ $row->nama_kelas }}</option>
                   @endforeach
                 </select>
               </div>
-            </div>  
+            </div>
           </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">CLOSE</button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save fa-fw"></i> SIMPAN
-        </button>
-      </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">CLOSE</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save fa-fw"></i> SIMPAN
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -159,7 +159,7 @@
         </button>
       </div>
       <form id="update">
-      <div class="modal-body">
+        <div class="modal-body">
           <div class="alert alert-danger print-error-msg" style="display: none;">
             <ul></ul>
           </div>
@@ -170,7 +170,7 @@
                 <input type="hidden" name="id_edit" id="id_edit" class="form-control" readonly="">
                 <input required="" type="text" name="nama_siswa" id="nama_siswa_edit" class="form-control">
               </div>
-            </div>  
+            </div>
             <div class="col-lg-6">
               <div class="form-group">
                 <label for="alamat_edit">Alamat:</label>
@@ -183,8 +183,8 @@
               <div class="form-group">
                 <label for="jenis_kelamin_edit">Jenis Kelamin:</label>
                 <select required="" name="jenis_kelamin" id="jenis_kelamin_edit" class="form-control">
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
                 </select>
               </div>
             </div>
@@ -199,19 +199,19 @@
                 <label for="kelas_id_edit">Kelas:</label>
                 <select required="" name="kelas_id" id="kelas_id_edit" class="form-control">
                   @foreach($kelas as $row)
-                    <option value="{{ $row->id }}">{{ $row->nama_kelas }}</option>
+                  <option value="{{ $row->id }}">{{ $row->nama_kelas }}</option>
                   @endforeach
                 </select>
               </div>
-            </div>  
+            </div>
           </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">CLOSE</button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-save fa-fw"></i> UPDATE
-        </button>
-      </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">CLOSE</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save fa-fw"></i> UPDATE
+          </button>
+        </div>
       </form>
     </div>
   </div>
